@@ -47,20 +47,16 @@ instance : Neg (Fixed n) := ⟨neg⟩
 instance : OfNat (Fixed n) m where
   ofNat := MkFixed $ n * m
 
-def ofInt : Int → Fixed n := λ m => MkFixed $ n * m
+/- 1 as Int is interpreted as the smallest prossible value representable with this precision -/
+def ofInt : Int → Fixed n := MkFixed
+
+/- 1 as Int is interpreted as a whole so 1.0 -/
+def wholeOfInt : Int → Fixed n := λ m => MkFixed $ n * m
 
 def toFloat : Fixed n → Float
 | MkFixed a => (Float.ofInt a) / (Float.ofNat n)
 
 def nextMetricLevel : Fixed n → Fixed (n * 10)
 | MkFixed a => MkFixed $ a * 100
-
-theorem nextMetricLevel_correct : ∀ (a : Int) (n : Nat), (ofInt a : Fixed (n * 10)) * 10 = (ofInt a : Fixed n).nextMetricLevel := by
-  intro a n
-  simp only [ofInt, nextMetricLevel]
-  apply congrArg MkFixed
-  -- Since nothing about Int is formalized this equation turns out to be rather annoying
-  -- to solve despite being trivial for human eye
-  sorry
 
 end Fixed
