@@ -57,7 +57,7 @@ instance : LT (Fixed n) := ltOfOrd
 instance : LE (Fixed n) := leOfOrd
 
 instance : OfNat (Fixed n) m where
-  ofNat := Fixed.mk $ n * m
+  ofNat := ofInt m
 
 instance : OfScientific (Fixed n) where
   ofScientific := ofScientific
