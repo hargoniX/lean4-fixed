@@ -6,12 +6,13 @@
 
 /--
   Fixed n represents a fixed precision number with resolution n.
+  For example n = 10 can calculate with 1 digit after comma, n=100 with
+  2 and so on.
 -/
-inductive Fixed (resolution : Nat) where
-| MkFixed : Int → Fixed resolution
-  deriving Inhabited, BEq, DecidableEq, Repr
+structure Fixed (resolution : Nat) where
+  (val : Int)
+  deriving Inhabited, BEq, DecidableEq, Repr, Ord
 -- TODO: Implement a nice ToString instance
--- TODO: Derive Ord with next nightly
 
 abbrev Uni := Fixed 1
 abbrev Deci := Fixed 10
@@ -24,39 +25,47 @@ abbrev Pico := Fixed 1000000000000
 namespace Fixed
 
 def add : Fixed n → Fixed n → Fixed n
-| MkFixed a, MkFixed b => MkFixed $ a + b
+| a, b => Fixed.mk $ a.val + b.val
 
 def sub : Fixed n → Fixed n → Fixed n
-| MkFixed a, MkFixed b => MkFixed $ a - b
+| a, b => Fixed.mk $ a.val - b.val
 
 def neg : Fixed n → Fixed n
-| MkFixed a => MkFixed $ -a
+| a => Fixed.mk $ -(a.val)
 
 def mul : Fixed n → Fixed n → Fixed n
-| MkFixed a, MkFixed b => MkFixed $ (a * b) / n
+| a, b => Fixed.mk $ (a.val * b.val) / n
 
 def div : Fixed n → Fixed n → Fixed n
-| MkFixed a, MkFixed b => MkFixed $ (a * n) / b
+| a, b => Fixed.mk $ (a.val * n) / b.val
+
+/- 1 as Int is interpreted as a whole so 1.0 -/
+def ofInt (m : Int) : Fixed n := Fixed.mk $ n * m
+
+/- 1.0 is interpreted as a whole. Since it's scientific notation this
+   implicitly assumes that n is a base 10 number to convert. -/
+def ofScientific : Nat → Bool → Nat → Fixed n
+| m, true, e => Fixed.mk $ m * (n / (10^e : Nat))
+| m, false, e => Fixed.mk $ m * (10^e : Nat) * n
 
 instance : Add (Fixed n) := ⟨add⟩
 instance : Sub (Fixed n) := ⟨sub⟩
 instance : Mul (Fixed n) := ⟨mul⟩
 instance : Div (Fixed n) := ⟨div⟩
 instance : Neg (Fixed n) := ⟨neg⟩
+instance : LT (Fixed n) := ltOfOrd
+instance : LE (Fixed n) := leOfOrd
 
 instance : OfNat (Fixed n) m where
-  ofNat := MkFixed $ n * m
+  ofNat := Fixed.mk $ n * m
 
-/- 1 as Int is interpreted as the smallest prossible value representable with this precision -/
-def ofInt : Int → Fixed n := MkFixed
-
-/- 1 as Int is interpreted as a whole so 1.0 -/
-def wholeOfInt : Int → Fixed n := λ m => MkFixed $ n * m
+instance : OfScientific (Fixed n) where
+  ofScientific := ofScientific
 
 def toFloat : Fixed n → Float
-| MkFixed a => (Float.ofInt a) / (Float.ofNat n)
+| a => (Float.ofInt a.val) / (Float.ofNat n)
 
 def nextMetricLevel : Fixed n → Fixed (n * 10)
-| MkFixed a => MkFixed $ a * 100
+|  a => Fixed.mk $ a.val * 100
 
 end Fixed
